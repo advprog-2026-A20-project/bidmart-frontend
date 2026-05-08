@@ -10,6 +10,8 @@ Repository ini berisi frontend BidMart yang dipisahkan dari repository monolith.
 - Axios
 - Vitest
 
+Boundary frontend diringkas di `docs/service-boundary.md`.
+
 Masih ada halaman static legacy di `pages/`, `assets/js/`, dan `public/` untuk kompatibilitas alur lama.
 
 ## Install Dependency
