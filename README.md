@@ -48,6 +48,13 @@ Preview hasil build:
 npm run preview
 ```
 
+## Run Dengan Docker
+
+```bash
+docker build -t bidmart-frontend .
+docker run --env-file .env.example -p 5173:5173 bidmart-frontend
+```
+
 ## Test
 
 ```bash

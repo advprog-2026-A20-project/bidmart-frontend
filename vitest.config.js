@@ -19,6 +19,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    setupFiles: ['./tests/setup-localstorage.js'],
     passWithNoTests: true,
     coverage: {
       provider: 'v8',
