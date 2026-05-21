@@ -107,8 +107,8 @@ describe.each(moduleVariants)('$label lelang-detail.js', ({ basePath }) => {
 
     expect(document.querySelector('#bid-history').children).toHaveLength(2)
     expect(document.querySelector('#bid-history').textContent).toContain('Bid tertinggi')
-    expect(document.querySelector('#bid-history').firstElementChild.classList.contains('border-slate-800')).toBe(true)
-    expect(document.querySelector('#bid-history').lastElementChild.classList.contains('border-emerald-600/30')).toBe(true)
+    expect(document.querySelector('#bid-history').firstElementChild.classList.contains('border-emerald-600/30')).toBe(true)
+    expect(document.querySelector('#bid-history').lastElementChild.classList.contains('border-slate-800')).toBe(true)
 
     const bidInput = document.querySelector('#bid-amount')
     const form = document.querySelector('#bid-form')

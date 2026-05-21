@@ -111,7 +111,9 @@ const renderHistory = (history = []) => {
   bidHistoryEl.innerHTML = ''
   bidHistoryEmptyEl.classList.toggle('hidden', history.length > 0)
 
-  history.forEach((bid) => {
+  const orderedHistory = Array.isArray(history) ? [...history].reverse() : []
+
+  orderedHistory.forEach((bid) => {
     const item = document.createElement('article')
     item.className = 'rounded-xl border px-4 py-3 text-sm'
     item.classList.add(
