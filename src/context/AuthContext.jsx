@@ -43,6 +43,22 @@ export const AuthProvider = ({ children }) => {
     }
   }, [])
 
+  const updateUser = useCallback((nextUserOrUpdater) => {
+    setUser((currentUser) => {
+      const nextUser = typeof nextUserOrUpdater === 'function'
+        ? nextUserOrUpdater(currentUser)
+        : nextUserOrUpdater
+
+      if (nextUser) {
+        localStorage.setItem('user', JSON.stringify(nextUser))
+      } else {
+        localStorage.removeItem('user')
+      }
+
+      return nextUser
+    })
+  }, [])
+
   const logout = useCallback(() => {
     applyToken('', null)
   }, [applyToken])
@@ -51,8 +67,9 @@ export const AuthProvider = ({ children }) => {
     token,
     user,
     setAuth: applyToken,
+    updateUser,
     logout,
-  }), [token, user, applyToken, logout])
+  }), [token, user, applyToken, updateUser, logout])
 
   return (
     <AuthContext.Provider value={value}>

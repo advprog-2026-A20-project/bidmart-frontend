@@ -8,12 +8,12 @@ const errorMessage = document.querySelector('#auctions-error-message')
 const retryButton = document.querySelector('#auctions-retry')
 
 const statusLabel = {
-  DRAFT: 'Draft',
-  ACTIVE: 'Aktif',
-  EXTENDED: 'Diperpanjang',
-  CLOSED: 'Ditutup',
-  WON: 'Menang',
-  UNSOLD: 'Tidak Terjual',
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  EXTENDED: 'EXTENDED',
+  CLOSED: 'CLOSED',
+  WON: 'WON',
+  UNSOLD: 'UNSOLD',
 }
 
 const formatPrice = (value) => {

@@ -19,14 +19,16 @@ const bidHistoryEmptyEl = document.querySelector('#bid-history-empty')
 const detailErrorBox = document.querySelector('#detail-error-box')
 const detailErrorMessage = document.querySelector('#detail-error-message')
 const refreshButton = document.querySelector('#refresh-detail')
+const activateButton = document.querySelector('#activate-auction')
 
 const statusLabel = {
-  DRAFT: 'Draft',
-  ACTIVE: 'Aktif',
-  EXTENDED: 'Diperpanjang',
-  CLOSED: 'Ditutup',
-  WON: 'Menang',
-  UNSOLD: 'Tidak Terjual',
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  EXTENDED: 'EXTENDED',
+  CLOSED: 'CLOSED',
+  WON: 'WON',
+  UNSOLD: 'UNSOLD',
+  CANCELLED: 'CANCELLED',
 }
 
 const formatPrice = (value) => {
@@ -109,7 +111,9 @@ const renderHistory = (history = []) => {
   bidHistoryEl.innerHTML = ''
   bidHistoryEmptyEl.classList.toggle('hidden', history.length > 0)
 
-  history.forEach((bid) => {
+  const orderedHistory = Array.isArray(history) ? [...history].reverse() : []
+
+  orderedHistory.forEach((bid) => {
     const item = document.createElement('article')
     item.className = 'rounded-xl border px-4 py-3 text-sm'
     item.classList.add(
@@ -153,6 +157,20 @@ const applyBidConstraint = (auction) => {
   bidError.textContent = ''
 }
 
+const syncActivationAction = (auction) => {
+  if (!activateButton) {
+    return
+  }
+
+  const user = getUser()
+  const canActivate = auction?.status === 'DRAFT'
+    && user?.role === 'SELLER'
+    && user?.id === auction?.sellerId
+
+  activateButton.classList.toggle('hidden', !canActivate)
+  activateButton.disabled = !canActivate
+}
+
 let currentAuction = null
 
 const loadAuctionDetail = async () => {
@@ -185,12 +203,14 @@ const loadAuctionDetail = async () => {
 
     renderHistory(Array.isArray(history) ? history : [])
     applyBidConstraint(auction)
+    syncActivationAction(auction)
   } catch (error) {
     detailErrorBox?.classList.remove('hidden')
     if (detailErrorMessage) {
       detailErrorMessage.textContent = error.message || 'Gagal memuat detail lelang.'
     }
     setBidEnabled(false)
+    syncActivationAction(null)
   }
 }
 
@@ -252,6 +272,35 @@ if (bidForm) {
         : message
     } finally {
       bidSubmit.textContent = 'Ajukan Penawaran'
+    }
+  })
+}
+
+if (activateButton) {
+  activateButton.addEventListener('click', async () => {
+    bidError.textContent = ''
+    bidSuccess.textContent = ''
+
+    if (!currentAuction) {
+      bidError.textContent = 'Data lelang belum siap.'
+      return
+    }
+
+    activateButton.disabled = true
+    activateButton.textContent = 'Mengaktifkan...'
+
+    try {
+      await request(`/auctions/${auctionId}/activate`, {
+        method: 'POST',
+        auth: true,
+      })
+      await loadAuctionDetail()
+      bidSuccess.textContent = 'Draft auction berhasil diaktifkan.'
+    } catch (error) {
+      bidError.textContent = error.message || 'Gagal mengaktifkan draft auction.'
+      syncActivationAction(currentAuction)
+    } finally {
+      activateButton.textContent = 'Aktifkan Lelang'
     }
   })
 }

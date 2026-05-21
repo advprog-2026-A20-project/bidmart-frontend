@@ -38,13 +38,40 @@
 }
 
 .balance-display {
-  font-size: 2.5em;
   font-weight: bold;
+}
+
+.balance-breakdown {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.balance-item {
+  min-width: 0;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  text-align: left;
+}
+
+.balance-item span {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+  opacity: 0.86;
+}
+
+.balance-item.held {
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .balance-amount {
   margin: 0;
-  font-size: 3em;
+  overflow-wrap: anywhere;
+  font-size: 2.2rem;
 }
 
 /* Top Up Section */
@@ -179,6 +206,16 @@ table tbody tr:hover {
   color: #c62828;
 }
 
+.transaction-type.hold {
+  background-color: #ede7f6;
+  color: #4527a0;
+}
+
+.transaction-type.release {
+  background-color: #e0f7fa;
+  color: #006064;
+}
+
 .transaction-type.payment {
   background-color: #fff3e0;
   color: #e65100;
@@ -208,7 +245,11 @@ table tbody tr:hover {
   }
 
   .balance-amount {
-    font-size: 2em;
+    font-size: 1.5rem;
+  }
+
+  .balance-breakdown {
+    grid-template-columns: 1fr;
   }
 
   .transactions-table {

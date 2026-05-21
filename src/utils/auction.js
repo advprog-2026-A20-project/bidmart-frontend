@@ -11,12 +11,13 @@ const dateFormatter = new Intl.DateTimeFormat('id-ID', {
 })
 
 const statusLabels = {
-  DRAFT: 'Draft',
-  ACTIVE: 'Active',
-  EXTENDED: 'Extended',
-  CLOSED: 'Closed',
-  WON: 'Won',
-  UNSOLD: 'Unsold',
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  EXTENDED: 'EXTENDED',
+  CLOSED: 'CLOSED',
+  WON: 'WON',
+  UNSOLD: 'UNSOLD',
+  CANCELLED: 'CANCELLED',
 }
 
 export const formatCurrency = (value) => {

@@ -1,4 +1,4 @@
-import { getAuctionDetail, getBidHistory, placeBid } from '../api/auction.js'
+import { activateAuction, getAuctionDetail, getBidHistory, placeBid } from '../api/auction.js'
 
 export const fetchAuctionSnapshot = async (auctionId) => {
   const [detail, history] = await Promise.all([
@@ -8,11 +8,15 @@ export const fetchAuctionSnapshot = async (auctionId) => {
 
   return {
     ...detail,
-    bidHistory: Array.isArray(history) ? history : [],
+    bidHistory: Array.isArray(history) ? [...history].reverse() : [],
   }
 }
 
 export const submitBid = async (auctionId, amount) => {
   const response = await placeBid(auctionId, amount)
   return response
+}
+
+export const activateDraftAuction = async (auctionId) => {
+  return activateAuction(auctionId)
 }

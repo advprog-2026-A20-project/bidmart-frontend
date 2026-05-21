@@ -11,12 +11,13 @@ const tanggalWaktuFormatter = new Intl.DateTimeFormat('id-ID', {
 })
 
 const labelStatusLelang = {
-  DRAFT: 'Draft',
-  ACTIVE: 'Aktif',
-  EXTENDED: 'Diperpanjang',
-  CLOSED: 'Ditutup',
-  WON: 'Menang',
-  UNSOLD: 'Tidak Terjual',
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  EXTENDED: 'EXTENDED',
+  CLOSED: 'CLOSED',
+  WON: 'WON',
+  UNSOLD: 'UNSOLD',
+  CANCELLED: 'CANCELLED',
 }
 
 export const formatRupiah = (nilai) => {
@@ -99,7 +100,7 @@ export const isStatusBukaUntukBid = (status) => {
 }
 
 export const getStatusTabKey = (status) => {
-  if (status === 'WON' || status === 'UNSOLD' || status === 'CLOSED') {
+  if (status === 'WON' || status === 'UNSOLD' || status === 'CLOSED' || status === 'CANCELLED') {
     return 'CLOSED'
   }
 

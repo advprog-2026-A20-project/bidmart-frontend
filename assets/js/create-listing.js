@@ -71,7 +71,7 @@ const hideWarning = () => {
 
 const guardSeller = () => {
   const user = getUser()
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('accessToken')
 
   if (!token) {
     window.location.href = '/pages/login.html'

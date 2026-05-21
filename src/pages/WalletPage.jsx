@@ -4,10 +4,13 @@ import {
   topUpWallet,
   getTransactionHistory,
 } from '../api/wallet.js'
+import { getCurrentUser } from '../api/auth.js'
+import useAuth from '../hooks/useAuth.js'
 import '../styles/WalletPage.css'
 
 const WalletPage = () => {
-  const [balance, setBalance] = useState(null)
+  const { token, setAuth, updateUser } = useAuth()
+  const [wallet, setWallet] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [isLoadingBalance, setIsLoadingBalance] = useState(true)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true)
@@ -24,7 +27,8 @@ const WalletPage = () => {
       setError('')
       setIsLoadingBalance(true)
       const balanceData = await getWalletBalance()
-      setBalance(balanceData.balance)
+      setWallet(balanceData)
+      syncUserFromWallet(balanceData)
 
       setIsLoadingTransactions(true)
       const transactionsData = await getTransactionHistory()
@@ -50,7 +54,8 @@ const WalletPage = () => {
     try {
       setIsTopping(true)
       const result = await topUpWallet(parseFloat(topUpAmount))
-      setBalance(result.balance)
+      setWallet(result)
+      await refreshAuthenticatedUser(result)
       setTopUpAmount('')
       await loadWalletData()
     } catch (err) {
@@ -73,6 +78,55 @@ const WalletPage = () => {
     return new Date(dateString).toLocaleString('id-ID')
   }
 
+  const syncUserFromWallet = (walletData) => {
+    if (!walletData) {
+      return
+    }
+
+    updateUser((currentUser) => {
+      if (!currentUser) {
+        return currentUser
+      }
+
+      return {
+        ...currentUser,
+        availableBalance: walletData.availableBalance ?? walletData.balance ?? currentUser.availableBalance ?? 0,
+        heldBalance: walletData.heldBalance ?? currentUser.heldBalance ?? 0,
+      }
+    })
+  }
+
+  const refreshAuthenticatedUser = async (walletData) => {
+    if (token) {
+      try {
+        const latestUser = await getCurrentUser()
+        setAuth(token, latestUser)
+        return
+      } catch {
+        // Fallback ke response wallet agar top-up tetap memperbarui saldo lokal.
+      }
+    }
+
+    const rawUser = localStorage.getItem('user')
+    if (!rawUser || !walletData) {
+      return
+    }
+
+    try {
+      const currentUser = JSON.parse(rawUser)
+      updateUser({
+        ...currentUser,
+        availableBalance: walletData.availableBalance ?? walletData.balance ?? currentUser.availableBalance ?? 0,
+        heldBalance: walletData.heldBalance ?? currentUser.heldBalance ?? 0,
+      })
+    } catch {
+      // Ignore malformed local user cache.
+    }
+  }
+
+  const availableBalance = wallet?.availableBalance ?? wallet?.balance ?? 0
+  const heldBalance = wallet?.heldBalance ?? 0
+
   return (
     <main className="wallet-container">
       <h1>Dompet Saya</h1>
@@ -85,12 +139,21 @@ const WalletPage = () => {
 
       {/* Balance Section */}
       <section className="balance-section">
-        <h2>Saldo Tersedia</h2>
+        <h2>Saldo Dompet</h2>
         {isLoadingBalance ? (
           <p>Loading...</p>
         ) : (
           <div className="balance-display">
-            <p className="balance-amount">{formatCurrency(balance || 0)}</p>
+            <div className="balance-breakdown">
+              <div className="balance-item">
+                <span>Saldo Tersedia</span>
+                <p className="balance-amount">{formatCurrency(availableBalance)}</p>
+              </div>
+              <div className="balance-item held">
+                <span>Dana Ditahan</span>
+                <p className="balance-amount">{formatCurrency(heldBalance)}</p>
+              </div>
+            </div>
           </div>
         )}
       </section>

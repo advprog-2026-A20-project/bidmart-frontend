@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getCurrentUser } from '../api/auth.js'
-import { fetchAuctionSnapshot, submitBid } from '../services/auctionService.js'
+import { activateDraftAuction, fetchAuctionSnapshot, submitBid } from '../services/auctionService.js'
 import { formatRupiah, getStatusLelangLabel, isStatusBukaUntukBid } from '../utils/lelang.js'
 
 const POLLING_INTERVAL_MS = 4000
@@ -12,6 +12,7 @@ const useAuctionDetail = ({ auctionId, token, user, setAuth }) => {
   const [actionError, setActionError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [isSubmittingBid, setIsSubmittingBid] = useState(false)
+  const [isActivatingAuction, setIsActivatingAuction] = useState(false)
   const [bidAmount, setBidAmount] = useState('')
   const [clockTick, setClockTick] = useState(Date.now())
   const [extensionNotice, setExtensionNotice] = useState('')
@@ -66,14 +67,16 @@ const useAuctionDetail = ({ auctionId, token, user, setAuth }) => {
 
   const refreshCurrentUser = async () => {
     if (!token) {
-      return
+      return null
     }
 
     try {
       const latestUser = await getCurrentUser()
       setAuth(token, latestUser)
+      return latestUser
     } catch {
       // Error refresh user tidak memblokir alur bid.
+      return null
     }
   }
 
@@ -171,7 +174,8 @@ const useAuctionDetail = ({ auctionId, token, user, setAuth }) => {
       return
     }
 
-    const availableBalance = Number(user?.availableBalance ?? 0)
+    const latestUser = await refreshCurrentUser()
+    const availableBalance = Number((latestUser || user)?.availableBalance ?? 0)
     if (availableBalance < nominalBid) {
       setActionError('Saldo Anda tidak cukup untuk nominal bid tersebut.')
       return
@@ -191,6 +195,44 @@ const useAuctionDetail = ({ auctionId, token, user, setAuth }) => {
     }
   }
 
+  const activateAuctionForm = async () => {
+    setActionError('')
+    setSuccessMessage('')
+
+    if (!auction) {
+      setActionError('Data lelang belum siap.')
+      return
+    }
+
+    if (!token) {
+      setActionError('Silakan login sebagai seller untuk mengaktifkan draft.')
+      return
+    }
+
+    if (user?.role !== 'SELLER' || user?.id !== auction.sellerId) {
+      setActionError('Hanya seller pemilik lelang yang dapat mengaktifkan draft.')
+      return
+    }
+
+    if (auction.status !== 'DRAFT') {
+      setActionError('Hanya draft auction yang dapat diaktifkan.')
+      return
+    }
+
+    setIsActivatingAuction(true)
+    try {
+      const activatedAuction = await activateDraftAuction(auction.id)
+      applyAuctionState({ ...activatedAuction, bidHistory: auction.bidHistory ?? [] })
+      await synchronizeAuction({ silent: true })
+      setSuccessMessage('Draft auction berhasil diaktifkan.')
+    } catch (err) {
+      const message = err?.response?.data?.message || err?.response?.data?.detail || 'Gagal mengaktifkan draft auction.'
+      setActionError(message)
+    } finally {
+      setIsActivatingAuction(false)
+    }
+  }
+
   const canBid = !resolveBidLockMessage()
 
   return {
@@ -201,6 +243,7 @@ const useAuctionDetail = ({ auctionId, token, user, setAuth }) => {
     actionError,
     successMessage,
     isSubmittingBid,
+    isActivatingAuction,
     bidAmount,
     setBidAmount,
     clockTick,
@@ -210,6 +253,7 @@ const useAuctionDetail = ({ auctionId, token, user, setAuth }) => {
     canBid,
     bidLockMessage: resolveBidLockMessage(),
     submitBidForm,
+    activateAuctionForm,
     reloadAuction: synchronizeAuction,
   }
 }
