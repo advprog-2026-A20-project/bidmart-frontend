@@ -66,12 +66,12 @@ describe.each(moduleVariants)('$label lelang.js', ({ basePath }) => {
 
     document.querySelector('#auction-status').value = 'ALL'
     document.querySelector('#auction-filter-form').dispatchEvent(
-      new window.Event('submit', { bubbles: true, cancelable: true }),
+      new globalThis.Event('submit', { bubbles: true, cancelable: true }),
     )
     await flushPromises()
 
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/auctions', expect.objectContaining({ auth: false }))
-    expect(window.location.search).toBe('')
+    expect(globalThis.location.search).toBe('')
   })
 
   it('retries after load errors and shows fallback error message', async () => {
@@ -79,7 +79,7 @@ describe.each(moduleVariants)('$label lelang.js', ({ basePath }) => {
     document.body.insertAdjacentHTML('beforeend', buildAuctionListMarkup())
 
     const fetchMock = vi.fn()
-      .mockRejectedValueOnce(new Error(''))
+      .mockRejectedValueOnce({})
       .mockResolvedValueOnce(jsonResponse([auction]))
     vi.stubGlobal('fetch', fetchMock)
 
@@ -108,8 +108,8 @@ describe.each(moduleVariants)('$label lelang.js', ({ basePath }) => {
     await importFresh(`${basePath}/lelang.js`)
     await flushPromises()
 
-    document.querySelector('#auction-filter-form').dispatchEvent(new window.Event('reset', { bubbles: true }))
-    await new Promise((resolve) => window.setTimeout(resolve, 0))
+    document.querySelector('#auction-filter-form').dispatchEvent(new globalThis.Event('reset', { bubbles: true }))
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0))
     await flushPromises()
 
     expect(fetchMock).toHaveBeenNthCalledWith(

@@ -106,17 +106,17 @@ describe.each(moduleVariants)('$label listings.js', ({ basePath }) => {
     document.querySelector('#max-price').value = '90'
     document.querySelector('#ending-before').value = '2026-04-21T16:00'
     document.querySelector('#listing-filter-form').dispatchEvent(
-      new window.Event('submit', { bubbles: true, cancelable: true }),
+      new globalThis.Event('submit', { bubbles: true, cancelable: true }),
     )
     await flushPromises()
 
     expect(document.querySelector('#listings-empty').classList.contains('hidden')).toBe(false)
-    expect(window.location.search).toContain('keyword=tablet')
-    expect(window.location.search).toContain('minPrice=10')
-    expect(window.location.search).not.toContain('status=')
+    expect(globalThis.location.search).toContain('keyword=tablet')
+    expect(globalThis.location.search).toContain('minPrice=10')
+    expect(globalThis.location.search).not.toContain('status=')
 
-    document.querySelector('#listing-filter-form').dispatchEvent(new window.Event('reset', { bubbles: true }))
-    await new Promise((resolve) => window.setTimeout(resolve, 0))
+    document.querySelector('#listing-filter-form').dispatchEvent(new globalThis.Event('reset', { bubbles: true }))
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0))
     await flushPromises()
 
     expect(document.querySelector('#listings-container').textContent).toContain('Old Tablet')
@@ -216,11 +216,11 @@ describe.each(moduleVariants)('$label listings.js', ({ basePath }) => {
 
     document.querySelector('#ending-after').value = 'not-a-date'
     document.querySelector('#listing-filter-form').dispatchEvent(
-      new window.Event('submit', { bubbles: true, cancelable: true }),
+      new globalThis.Event('submit', { bubbles: true, cancelable: true }),
     )
     await flushPromises()
 
-    expect(window.location.search).not.toContain('endingAfter=')
+    expect(globalThis.location.search).not.toContain('endingAfter=')
     await vi.waitFor(() => {
       expect(document.querySelector('#listings-container').textContent).toContain('Second Fetch')
     })

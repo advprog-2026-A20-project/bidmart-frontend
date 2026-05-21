@@ -55,7 +55,7 @@ const setVisible = (element, isVisible) => {
 }
 
 const syncFilterStateFromUrl = () => {
-  const params = new URLSearchParams(window.location.search)
+  const params = new URLSearchParams(globalThis.location.search)
   if (statusSelect) {
     statusSelect.value = params.get('status') || 'ALL'
   }
@@ -69,8 +69,8 @@ const readFilters = () => {
 
 const applyFilterUrl = (filters) => {
   const queryString = toQueryString(filters)
-  const nextUrl = `${window.location.pathname}${queryString}`
-  window.history.replaceState({}, '', nextUrl)
+  const nextUrl = `${globalThis.location.pathname}${queryString}`
+  globalThis.history.replaceState({}, '', nextUrl)
 }
 
 const renderAuctionCard = (auction) => {
@@ -162,7 +162,7 @@ if (filterForm) {
     await loadAuctions()
   })
   filterForm.addEventListener('reset', () => {
-    window.setTimeout(() => {
+    globalThis.setTimeout(() => {
       loadAuctions()
     }, 0)
   })
