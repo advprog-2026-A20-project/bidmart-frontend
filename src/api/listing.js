@@ -1,7 +1,9 @@
 import client from './client.js'
 
-export const getListings = async () => {
-  const response = await client.get('/listings')
+export const getListings = async ({ status } = {}) => {
+  const response = await client.get('/listings', {
+    params: status ? { status } : undefined,
+  })
   return response.data
 }
 

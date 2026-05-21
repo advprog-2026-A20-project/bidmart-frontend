@@ -16,6 +16,7 @@ const ListingsPage = () => {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [clockTick, setClockTick] = useState(Date.now())
+  const [statusFilter, setStatusFilter] = useState('')
 
   useEffect(() => {
     const tickTimer = window.setInterval(() => {
@@ -37,7 +38,7 @@ const ListingsPage = () => {
       }
 
       try {
-        const data = await getAuctions()
+        const data = await getAuctions({ status: statusFilter })
         if (isMounted) {
           setAuctions(Array.isArray(data) ? data : [])
         }
@@ -62,7 +63,7 @@ const ListingsPage = () => {
       isMounted = false
       window.clearInterval(pollTimer)
     }
-  }, [])
+  }, [statusFilter])
 
   return (
     <main className="page">
@@ -82,6 +83,26 @@ const ListingsPage = () => {
             </Link>
           )}
         </div>
+      </section>
+
+      <section className="panel toolbar-panel">
+        <label className="field-label" htmlFor="auction-status-filter">
+          Status
+        </label>
+        <select
+          id="auction-status-filter"
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+        >
+          <option value="">Default</option>
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="EXTENDED">EXTENDED</option>
+          <option value="CLOSED">CLOSED</option>
+          <option value="WON">WON</option>
+          <option value="UNSOLD">UNSOLD</option>
+          <option value="DRAFT">DRAFT</option>
+          <option value="CANCELLED">CANCELLED</option>
+        </select>
       </section>
 
       {isLoading && (
