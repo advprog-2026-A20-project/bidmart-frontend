@@ -4,6 +4,42 @@ import { login } from '../api/auth.js'
 import useAuth from '../hooks/useAuth.js'
 import { routes } from '../router/routes.js'
 
+const EMAIL_NOT_REGISTERED_MESSAGE = 'Email tidak terdaftar.'
+const INVALID_CREDENTIALS_MESSAGE = 'Email atau password salah.'
+const LOGIN_FAILED_MESSAGE = 'Login gagal. Silakan coba lagi.'
+
+const extractBackendMessage = (payload) => {
+  if (!payload) {
+    return ''
+  }
+  if (typeof payload === 'string') {
+    return payload
+  }
+  if (typeof payload.message === 'string') {
+    return payload.message
+  }
+  return ''
+}
+
+const resolveLoginErrorMessage = (err) => {
+  const status = err?.response?.status
+  const rawMessage = extractBackendMessage(err?.response?.data).toLowerCase()
+
+  if (status === 404 || rawMessage.includes('email not registered')) {
+    return EMAIL_NOT_REGISTERED_MESSAGE
+  }
+
+  if (
+    status === 401
+    || rawMessage.includes('invalid credentials')
+    || rawMessage.includes('bad credentials')
+  ) {
+    return INVALID_CREDENTIALS_MESSAGE
+  }
+
+  return LOGIN_FAILED_MESSAGE
+}
+
 const LoginPage = () => {
   const navigate = useNavigate()
   const { setAuth } = useAuth()
@@ -22,8 +58,7 @@ const LoginPage = () => {
       setAuth(data.accessToken, data.user)
       navigate(routes.listings)
     } catch (err) {
-      const message = err?.response?.data?.message || 'Login failed'
-      setError(message)
+      setError(resolveLoginErrorMessage(err))
     } finally {
       setIsSubmitting(false)
     }
