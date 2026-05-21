@@ -96,7 +96,7 @@ const syncFilterStateFromUrl = () => {
   if (categorySelect) categorySelect.value = params.get('category') || ''
   if (minPriceInput) minPriceInput.value = params.get('minPrice') || ''
   if (maxPriceInput) maxPriceInput.value = params.get('maxPrice') || ''
-  if (statusSelect) statusSelect.value = params.get('status') || ''
+  if (statusSelect) statusSelect.value = params.get('status') || 'ALL'
   if (endingAfterInput) endingAfterInput.value = toLocalInputValue(params.get('endingAfter'))
   if (endingBeforeInput) endingBeforeInput.value = toLocalInputValue(params.get('endingBefore'))
 }
@@ -107,7 +107,7 @@ const readFilters = () => {
     category: categorySelect?.value || '',
     minPrice: minPriceInput?.value || '',
     maxPrice: maxPriceInput?.value || '',
-    status: statusSelect?.value || '',
+    status: statusSelect?.value === 'ALL' ? '' : statusSelect?.value || '',
     endingAfter: toIsoInstant(endingAfterInput?.value || ''),
     endingBefore: toIsoInstant(endingBeforeInput?.value || ''),
   }

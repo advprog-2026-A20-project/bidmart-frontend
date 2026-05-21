@@ -57,13 +57,13 @@ const setVisible = (element, isVisible) => {
 const syncFilterStateFromUrl = () => {
   const params = new URLSearchParams(window.location.search)
   if (statusSelect) {
-    statusSelect.value = params.get('status') || ''
+    statusSelect.value = params.get('status') || 'ALL'
   }
 }
 
 const readFilters = () => {
   return {
-    status: statusSelect?.value || '',
+    status: statusSelect?.value === 'ALL' ? '' : statusSelect?.value || '',
   }
 }
 

@@ -31,6 +31,19 @@
             <select class="rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-slate-100" id="category" name="category"></select>
           </label>
           <label class="flex flex-col gap-2 text-sm">
+            Status
+            <select class="rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-slate-100" id="status" name="status">
+              <option value="ALL">ALL</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="EXTENDED">EXTENDED</option>
+              <option value="CLOSED">CLOSED</option>
+              <option value="WON">WON</option>
+              <option value="UNSOLD">UNSOLD</option>
+              <option value="DRAFT">DRAFT</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-2 text-sm">
             Min price
             <input class="rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-slate-100" id="min-price" name="minPrice" type="number" min="0" step="0.01" />
           </label>

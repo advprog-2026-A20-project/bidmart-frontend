@@ -13,6 +13,7 @@ const buildListingsMarkup = () => `
     <select id="category"></select>
     <input id="min-price" value="" />
     <input id="max-price" value="" />
+    <select id="status"><option value="ALL">ALL</option><option value="CLOSED">CLOSED</option></select>
     <input id="ending-after" value="" />
     <input id="ending-before" value="" />
     <button type="submit">Apply</button>
@@ -90,6 +91,7 @@ describe.each(moduleVariants)('$label listings.js', ({ basePath }) => {
 
     expect(document.querySelector('#keyword').value).toBe('phone')
     expect(document.querySelector('#category').value).toBe('ELECTRONICS')
+    expect(document.querySelector('#status').value).toBe('ALL')
     expect(document.querySelector('#ending-after').value).not.toBe('')
     expect(document.querySelector('#ending-before').value).toBe('')
     expect(document.querySelector('#listings-container').children).toHaveLength(2)
@@ -111,6 +113,7 @@ describe.each(moduleVariants)('$label listings.js', ({ basePath }) => {
     expect(document.querySelector('#listings-empty').classList.contains('hidden')).toBe(false)
     expect(window.location.search).toContain('keyword=tablet')
     expect(window.location.search).toContain('minPrice=10')
+    expect(window.location.search).not.toContain('status=')
 
     document.querySelector('#listing-filter-form').dispatchEvent(new window.Event('reset', { bubbles: true }))
     await new Promise((resolve) => window.setTimeout(resolve, 0))
