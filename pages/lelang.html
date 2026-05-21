@@ -17,6 +17,26 @@
         </div>
       </header>
 
+      <section class="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <form class="flex flex-wrap items-end gap-4" id="auction-filter-form">
+          <label class="flex min-w-48 flex-col gap-2 text-sm">
+            Status
+            <select class="rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-slate-100" id="auction-status" name="status">
+              <option value="ALL">ALL</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="EXTENDED">EXTENDED</option>
+              <option value="CLOSED">CLOSED</option>
+              <option value="WON">WON</option>
+              <option value="UNSOLD">UNSOLD</option>
+              <option value="DRAFT">DRAFT</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+          </label>
+          <button class="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400" type="submit">Apply filter</button>
+          <button class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800" type="reset">Reset</button>
+        </form>
+      </section>
+
       <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" id="auctions-container"></section>
 
       <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" id="auctions-skeleton">

@@ -105,7 +105,11 @@ let currentListing = null
 const renderOwnerActions = (listing) => {
   const user = getUser()
   const isOwnerSeller = user?.role === 'SELLER' && user?.id === listing?.sellerId
-  const canEdit = Boolean(isOwnerSeller && listing?.status === 'ACTIVE' && !listing?.hasBids)
+  const canEdit = Boolean(
+    isOwnerSeller
+      && (listing?.status === 'DRAFT' || listing?.status === 'ACTIVE')
+      && !listing?.hasBids,
+  )
 
   setVisible(ownerActions, canEdit)
 

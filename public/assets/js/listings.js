@@ -5,6 +5,7 @@ const keywordInput = document.querySelector('#keyword')
 const categorySelect = document.querySelector('#category')
 const minPriceInput = document.querySelector('#min-price')
 const maxPriceInput = document.querySelector('#max-price')
+const statusSelect = document.querySelector('#status')
 const endingAfterInput = document.querySelector('#ending-after')
 const endingBeforeInput = document.querySelector('#ending-before')
 const container = document.querySelector('#listings-container')
@@ -95,6 +96,7 @@ const syncFilterStateFromUrl = () => {
   if (categorySelect) categorySelect.value = params.get('category') || ''
   if (minPriceInput) minPriceInput.value = params.get('minPrice') || ''
   if (maxPriceInput) maxPriceInput.value = params.get('maxPrice') || ''
+  if (statusSelect) statusSelect.value = params.get('status') || 'ALL'
   if (endingAfterInput) endingAfterInput.value = toLocalInputValue(params.get('endingAfter'))
   if (endingBeforeInput) endingBeforeInput.value = toLocalInputValue(params.get('endingBefore'))
 }
@@ -105,6 +107,7 @@ const readFilters = () => {
     category: categorySelect?.value || '',
     minPrice: minPriceInput?.value || '',
     maxPrice: maxPriceInput?.value || '',
+    status: statusSelect?.value === 'ALL' ? '' : statusSelect?.value || '',
     endingAfter: toIsoInstant(endingAfterInput?.value || ''),
     endingBefore: toIsoInstant(endingBeforeInput?.value || ''),
   }

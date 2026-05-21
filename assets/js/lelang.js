@@ -1,5 +1,7 @@
-import { request } from './api.js'
+import { request, toQueryString } from './api.js'
 
+const filterForm = document.querySelector('#auction-filter-form')
+const statusSelect = document.querySelector('#auction-status')
 const container = document.querySelector('#auctions-container')
 const skeleton = document.querySelector('#auctions-skeleton')
 const emptyState = document.querySelector('#auctions-empty')
@@ -50,6 +52,25 @@ const setVisible = (element, isVisible) => {
     return
   }
   element.classList.toggle('hidden', !isVisible)
+}
+
+const syncFilterStateFromUrl = () => {
+  const params = new URLSearchParams(globalThis.location.search)
+  if (statusSelect) {
+    statusSelect.value = params.get('status') || 'ALL'
+  }
+}
+
+const readFilters = () => {
+  return {
+    status: statusSelect?.value === 'ALL' ? '' : statusSelect?.value || '',
+  }
+}
+
+const applyFilterUrl = (filters) => {
+  const queryString = toQueryString(filters)
+  const nextUrl = `${globalThis.location.pathname}${queryString}`
+  globalThis.history.replaceState({}, '', nextUrl)
 }
 
 const renderAuctionCard = (auction) => {
@@ -105,7 +126,9 @@ const loadAuctions = async () => {
   container.innerHTML = ''
 
   try {
-    const data = await request('/auctions', { auth: false })
+    const filters = readFilters()
+    applyFilterUrl(filters)
+    const data = await request(`/auctions${toQueryString(filters)}`, { auth: false })
     const auctions = Array.isArray(data) ? data : []
 
     if (auctions.length === 0) {
@@ -129,6 +152,19 @@ const loadAuctions = async () => {
 if (retryButton) {
   retryButton.addEventListener('click', () => {
     loadAuctions()
+  })
+}
+
+if (filterForm) {
+  syncFilterStateFromUrl()
+  filterForm.addEventListener('submit', async (event) => {
+    event.preventDefault()
+    await loadAuctions()
+  })
+  filterForm.addEventListener('reset', () => {
+    globalThis.setTimeout(() => {
+      loadAuctions()
+    }, 0)
   })
 }
 
