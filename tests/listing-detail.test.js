@@ -171,6 +171,50 @@ describe.each(moduleVariants)('$label listing-detail.js', ({ basePath }) => {
       url === '/api/listings/listing-3' && options?.method === 'DELETE')).toBe(true)
   })
 
+  it('lets the seller cancel a draft listing', async () => {
+    setPage('/pages/listing-detail.html?id=listing-draft')
+    document.body.insertAdjacentHTML('beforeend', buildListingDetailMarkup())
+    localStorage.setItem('user', JSON.stringify({ id: 'seller-draft', role: 'SELLER' }))
+
+    const draftListing = {
+      id: 'listing-draft',
+      title: 'Draft Item',
+      description: 'Not active yet',
+      imageUrl: '',
+      price: 100,
+      category: 'OTHER',
+      categoryPath: 'Lainnya',
+      sellerId: 'seller-draft',
+      sellerEmail: 'seller@example.com',
+      auctionId: 'auction-draft',
+      auctionStatus: 'DRAFT',
+      endsAt: null,
+      status: 'DRAFT',
+      hasBids: false,
+    }
+
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(draftListing))
+      .mockResolvedValueOnce(jsonResponse([{ key: 'OTHER', path: 'Lainnya', children: [] }]))
+      .mockResolvedValueOnce(jsonResponse({ ...draftListing, status: 'CANCELLED', auctionStatus: 'CANCELLED' }))
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    await importFresh(`${basePath}/listing-detail.js`)
+    await flushPromises()
+
+    expect(document.querySelector('#owner-actions').classList.contains('hidden')).toBe(false)
+
+    document.querySelector('#listing-cancel-button').click()
+    await flushPromises()
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      '/api/listings/listing-draft',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+  })
+
   it('shows owner action errors and respects cancelled confirmations', async () => {
     setPage('/pages/listing-detail.html?id=listing-4')
     document.body.insertAdjacentHTML('beforeend', buildListingDetailMarkup())
