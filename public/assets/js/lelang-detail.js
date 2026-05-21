@@ -103,6 +103,24 @@ const syncBidInput = (auction) => {
   }
 }
 
+const compareBidHistoryDescending = (leftBid, rightBid) => {
+  const leftSequence = Number(leftBid?.sequenceNumber)
+  const rightSequence = Number(rightBid?.sequenceNumber)
+
+  if (Number.isFinite(leftSequence) && Number.isFinite(rightSequence) && leftSequence !== rightSequence) {
+    return rightSequence - leftSequence
+  }
+
+  const leftSubmittedAt = new Date(leftBid?.submittedAt || 0).getTime()
+  const rightSubmittedAt = new Date(rightBid?.submittedAt || 0).getTime()
+
+  if (Number.isFinite(leftSubmittedAt) && Number.isFinite(rightSubmittedAt) && leftSubmittedAt !== rightSubmittedAt) {
+    return rightSubmittedAt - leftSubmittedAt
+  }
+
+  return 0
+}
+
 const renderHistory = (history = []) => {
   if (!bidHistoryEl || !bidHistoryEmptyEl) {
     return
@@ -111,7 +129,9 @@ const renderHistory = (history = []) => {
   bidHistoryEl.innerHTML = ''
   bidHistoryEmptyEl.classList.toggle('hidden', history.length > 0)
 
-  const orderedHistory = Array.isArray(history) ? [...history].reverse() : []
+  const orderedHistory = Array.isArray(history)
+    ? [...history].sort(compareBidHistoryDescending)
+    : []
 
   orderedHistory.forEach((bid) => {
     const item = document.createElement('article')

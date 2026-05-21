@@ -106,6 +106,8 @@ describe.each(moduleVariants)('$label lelang-detail.js', ({ basePath }) => {
     await flushPromises()
 
     expect(document.querySelector('#bid-history').children).toHaveLength(2)
+    expect(document.querySelector('#bid-history').firstElementChild.textContent).toContain('#2')
+    expect(document.querySelector('#bid-history').lastElementChild.textContent).toContain('#1')
     expect(document.querySelector('#bid-history').textContent).toContain('Bid tertinggi')
     expect(document.querySelector('#bid-history').firstElementChild.classList.contains('border-emerald-600/30')).toBe(true)
     expect(document.querySelector('#bid-history').lastElementChild.classList.contains('border-slate-800')).toBe(true)
@@ -142,6 +144,7 @@ describe.each(moduleVariants)('$label lelang-detail.js', ({ basePath }) => {
     await vi.waitFor(() => {
       expect(document.querySelector('#auction-current-price').textContent).toContain('150')
       expect(document.querySelector('#bid-amount').value).toBe('160')
+      expect(document.querySelector('#bid-history').firstElementChild.textContent).toContain('#3')
     })
 
     document.querySelector('#refresh-detail').click()
