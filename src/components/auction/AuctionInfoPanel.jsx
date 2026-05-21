@@ -41,9 +41,15 @@ const renderHasilAkhir = (auction, user) => {
 const AuctionInfoPanel = ({
   auction,
   user,
+  isActivatingAuction,
+  activateAuctionForm,
   notificationsEnabled,
   setNotificationsEnabled,
 }) => {
+  const canActivateDraft = user?.role === 'SELLER'
+    && user?.id === auction.sellerId
+    && auction.status === 'DRAFT'
+
   return (
     <article className="panel bid-panel lelang-info-panel">
       <div className="panel-header">
@@ -85,6 +91,20 @@ const AuctionInfoPanel = ({
           <strong>{formatTanggalWaktu(auction.endsAt)}</strong>
         </div>
       </div>
+
+      {canActivateDraft && (
+        <div className="auction-action-card">
+          <span>Draft siap dipublikasikan</span>
+          <button
+            className="button"
+            type="button"
+            onClick={activateAuctionForm}
+            disabled={isActivatingAuction}
+          >
+            {isActivatingAuction ? 'Mengaktifkan...' : 'Aktifkan Lelang'}
+          </button>
+        </div>
+      )}
 
       <label className="toggle-field lelang-notification-toggle">
         <input

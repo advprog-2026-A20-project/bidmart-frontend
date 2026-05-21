@@ -1,10 +1,10 @@
 import { getStatusTabKey } from '../../utils/lelang.js'
 
 const tabs = [
-  { id: 'DRAFT', label: 'Draft' },
-  { id: 'ACTIVE', label: 'Aktif' },
-  { id: 'EXTENDED', label: 'Diperpanjang' },
-  { id: 'CLOSED', label: 'Ditutup' },
+  { id: 'DRAFT', label: 'DRAFT' },
+  { id: 'ACTIVE', label: 'ACTIVE' },
+  { id: 'EXTENDED', label: 'EXTENDED' },
+  { id: 'CLOSED', label: 'CLOSED' },
 ]
 
 const AuctionStatusTabs = ({ status }) => {

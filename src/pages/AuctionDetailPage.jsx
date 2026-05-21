@@ -19,6 +19,7 @@ const AuctionDetailPage = () => {
     actionError,
     successMessage,
     isSubmittingBid,
+    isActivatingAuction,
     bidAmount,
     setBidAmount,
     clockTick,
@@ -28,6 +29,7 @@ const AuctionDetailPage = () => {
     canBid,
     bidLockMessage,
     submitBidForm,
+    activateAuctionForm,
     reloadAuction,
   } = useAuctionDetail({
     auctionId,
@@ -105,6 +107,8 @@ const AuctionDetailPage = () => {
         <AuctionInfoPanel
           auction={auction}
           user={user}
+          isActivatingAuction={isActivatingAuction}
+          activateAuctionForm={activateAuctionForm}
           notificationsEnabled={notificationsEnabled}
           setNotificationsEnabled={setNotificationsEnabled}
         />

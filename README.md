@@ -66,6 +66,12 @@ VITE_API_BASE_URL=http://localhost:8080/api
 
 `VITE_API_BASE_URL` harus menunjuk ke gateway. Jangan arahkan frontend langsung ke service internal seperti `http://localhost:8081` atau `http://localhost:8082`.
 
+Untuk Vercel, set environment variable berikut:
+
+```text
+VITE_API_BASE_URL=https://identical-daffy-backendtugasadprokelompoka20-0d961edc.koyeb.app/api
+```
+
 ## Mapping Fitur ke Endpoint Gateway
 
 | Fitur frontend | Endpoint gateway |
@@ -88,6 +94,6 @@ VITE_API_BASE_URL=http://localhost:8080/api
 
 ## Endpoint yang Perlu Dicek Ulang
 
-- Static legacy pages masih memakai `window.__API_URL__`; defaultnya sudah gateway lokal, tetapi deployment production perlu menyuntikkan gateway URL yang benar.
+- Static legacy pages masih memakai `window.__API_URL__`; defaultnya gateway lokal pada `localhost` dan gateway Koyeb pada hostname production.
 - Wallet endpoint saat ini masih memakai `/api/wallet/*`, sementara target routing gateway jangka panjang menyebut `/api/wallets/**`.
 - Bid command saat ini masih lewat `/api/auctions/{auctionId}/bids`; target service masa depan dapat memindahkannya ke `/api/bids/**`.

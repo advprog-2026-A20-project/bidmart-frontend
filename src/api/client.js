@@ -1,6 +1,13 @@
 import axios from 'axios'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+const productionGatewayUrl =
+  'https://identical-daffy-backendtugasadprokelompoka20-0d961edc.koyeb.app/api'
+
+const localGatewayUrl = 'http://localhost:8080/api'
+
+const baseURL = import.meta.env.VITE_API_BASE_URL || (
+  import.meta.env.PROD ? productionGatewayUrl : localGatewayUrl
+)
 
 const client = axios.create({
   baseURL,
