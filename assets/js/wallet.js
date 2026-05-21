@@ -1,4 +1,4 @@
-import { getUser, request } from './api.js'
+import { getUser, request, setUser } from './api.js'
 import { showToast } from './ui.js'
 
 const balanceEl = document.querySelector('#wallet-balance')
@@ -49,11 +49,25 @@ const renderTransactions = (transactions) => {
   })
 }
 
+const syncStoredUserFromWallet = (walletData) => {
+  const currentUser = getUser()
+  if (!currentUser || !walletData) {
+    return
+  }
+
+  setUser({
+    ...currentUser,
+    availableBalance: walletData.availableBalance ?? walletData.balance ?? currentUser.availableBalance ?? 0,
+    heldBalance: walletData.heldBalance ?? currentUser.heldBalance ?? 0,
+  })
+}
+
 const loadWallet = async () => {
   try {
     loadingEl.textContent = 'Loading...'
     const balanceData = await request('/wallet/balance', { auth: true })
     const transactions = await request('/wallet/transactions', { auth: true })
+    syncStoredUserFromWallet(balanceData)
 
     const balance = balanceData.balance || 0
     balanceEl.textContent = formatCurrency(balance)
@@ -84,6 +98,7 @@ if (form) {
         body: JSON.stringify({ amount }),
         auth: true,
       })
+      syncStoredUserFromWallet(data)
 
       amountInput.value = ''
       showToast('success', 'Top up berhasil')

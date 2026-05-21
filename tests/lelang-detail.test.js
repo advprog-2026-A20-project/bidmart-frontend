@@ -15,6 +15,7 @@ const buildAuctionDetailMarkup = () => `
   <p id="auction-current-price"></p>
   <p id="auction-minimum-bid"></p>
   <p id="auction-ends-at"></p>
+  <button id="activate-auction" class="hidden" type="button">Aktifkan Lelang</button>
   <form id="bid-form">
     <input id="bid-amount" />
     <button id="bid-submit" type="submit">Ajukan Penawaran</button>
@@ -106,8 +107,8 @@ describe.each(moduleVariants)('$label lelang-detail.js', ({ basePath }) => {
 
     expect(document.querySelector('#bid-history').children).toHaveLength(2)
     expect(document.querySelector('#bid-history').textContent).toContain('Bid tertinggi')
-    expect(document.querySelector('#bid-history').firstElementChild.classList.contains('border-slate-800')).toBe(true)
-    expect(document.querySelector('#bid-history').lastElementChild.classList.contains('border-emerald-600/30')).toBe(true)
+    expect(document.querySelector('#bid-history').firstElementChild.classList.contains('border-emerald-600/30')).toBe(true)
+    expect(document.querySelector('#bid-history').lastElementChild.classList.contains('border-slate-800')).toBe(true)
 
     const bidInput = document.querySelector('#bid-amount')
     const form = document.querySelector('#bid-form')
@@ -193,6 +194,120 @@ describe.each(moduleVariants)('$label lelang-detail.js', ({ basePath }) => {
 
     expect(document.querySelector('#bid-error').textContent).toBe('Hanya akun BUYER yang dapat mengajukan penawaran.')
     expect(document.querySelector('#auction-minimum-bid').textContent).toContain('230')
+  })
+
+  it('shows activate action for seller-owned draft auctions', async () => {
+    setPage('/pages/lelang-detail.html?id=auction-draft')
+    document.body.insertAdjacentHTML('beforeend', buildAuctionDetailMarkup())
+    localStorage.setItem('user', JSON.stringify({ id: 'seller-1', role: 'SELLER' }))
+    localStorage.setItem('accessToken', 'seller-token')
+
+    const draftAuction = {
+      id: 'auction-draft',
+      title: 'Draft Item',
+      description: 'Needs activation',
+      sellerId: 'seller-1',
+      status: 'DRAFT',
+      currentPrice: 100,
+      nextMinimumBid: 100,
+      startsAt: null,
+      endsAt: null,
+    }
+    const activeAuction = {
+      ...draftAuction,
+      status: 'ACTIVE',
+      startsAt: '2026-04-20T10:00:00Z',
+      endsAt: '2026-04-20T11:00:00Z',
+    }
+
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(draftAuction))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse(activeAuction))
+      .mockResolvedValueOnce(jsonResponse(activeAuction))
+      .mockResolvedValueOnce(jsonResponse([]))
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    await importFresh(`${basePath}/lelang-detail.js`)
+    await flushPromises()
+
+    const activateButton = document.querySelector('#activate-auction')
+    expect(activateButton.classList.contains('hidden')).toBe(false)
+    expect(activateButton.disabled).toBe(false)
+
+    activateButton.click()
+    await flushPromises()
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      '/api/auctions/auction-draft/activate',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.any(Headers),
+      }),
+    )
+    expect(fetchMock.mock.calls[2][1].headers.get('Authorization')).toBe('Bearer seller-token')
+    await vi.waitFor(() => {
+      expect(document.querySelector('#auction-status').textContent).toBe('ACTIVE')
+      expect(activateButton.classList.contains('hidden')).toBe(true)
+      expect(document.querySelector('#bid-success').textContent).toBe('Draft auction berhasil diaktifkan.')
+    })
+  })
+
+  it('guards activation when auction data is not loaded yet', async () => {
+    setPage('/pages/lelang-detail.html')
+    document.body.insertAdjacentHTML('beforeend', buildAuctionDetailMarkup())
+    localStorage.setItem('user', JSON.stringify({ id: 'seller-1', role: 'SELLER' }))
+
+    vi.stubGlobal('fetch', vi.fn())
+
+    await importFresh(`${basePath}/lelang-detail.js`)
+    await flushPromises()
+
+    document.querySelector('#activate-auction').dispatchEvent(
+      new window.Event('click', { bubbles: true, cancelable: true }),
+    )
+
+    expect(document.querySelector('#bid-error').textContent).toBe('Data lelang belum siap.')
+  })
+
+  it('keeps draft activation available when the activate request fails', async () => {
+    setPage('/pages/lelang-detail.html?id=auction-draft-fail')
+    document.body.insertAdjacentHTML('beforeend', buildAuctionDetailMarkup())
+    localStorage.setItem('user', JSON.stringify({ id: 'seller-1', role: 'SELLER' }))
+    localStorage.setItem('accessToken', 'seller-token')
+
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({
+        id: 'auction-draft-fail',
+        title: 'Draft Item',
+        description: 'Needs activation',
+        sellerId: 'seller-1',
+        status: 'DRAFT',
+        currentPrice: 100,
+        nextMinimumBid: 100,
+        startsAt: null,
+        endsAt: null,
+      }))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonFailureResponse({ message: 'Activation rejected' }, 409))
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    await importFresh(`${basePath}/lelang-detail.js`)
+    await flushPromises()
+
+    const activateButton = document.querySelector('#activate-auction')
+    activateButton.click()
+    await flushPromises()
+
+    await vi.waitFor(() => {
+      expect(document.querySelector('#bid-error').textContent).toBe('Activation rejected')
+      expect(activateButton.classList.contains('hidden')).toBe(false)
+      expect(activateButton.disabled).toBe(false)
+      expect(activateButton.textContent).toBe('Aktifkan Lelang')
+    })
   })
 
   it('reloads detail after 409 bid errors and preserves generic bid failures', async () => {

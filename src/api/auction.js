@@ -18,6 +18,8 @@ export const getBidHistory = async (auctionId) => {
 export const createAuction = async ({
   title,
   description,
+  imageUrl,
+  category,
   startingPrice,
   reservePrice,
   minimumBidIncrement,
@@ -27,6 +29,8 @@ export const createAuction = async ({
   const response = await client.post('/auctions', {
     title,
     description,
+    imageUrl,
+    category,
     startingPrice,
     reservePrice,
     minimumBidIncrement,

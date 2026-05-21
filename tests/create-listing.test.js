@@ -59,7 +59,7 @@ describe.each(moduleVariants)('$label create-listing.js', ({ basePath }) => {
   it('loads categories and disables the form for non-seller users', async () => {
     setPage('/pages/create-listing.html')
     document.body.insertAdjacentHTML('beforeend', buildFormMarkup())
-    localStorage.setItem('token', 'session-token')
+    localStorage.setItem('accessToken', 'access-token')
     localStorage.setItem('user', JSON.stringify({ id: 'buyer-1', role: 'BUYER' }))
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(categoryTree)))
@@ -82,7 +82,7 @@ describe.each(moduleVariants)('$label create-listing.js', ({ basePath }) => {
         <button type="submit">Create Auction</button>
       </form>
     `)
-    localStorage.setItem('token', 'session-token')
+    localStorage.setItem('accessToken', 'access-token')
     localStorage.setItem('user', JSON.stringify({ id: 'seller-1', role: 'SELLER' }))
 
     const fetchMock = vi.fn()
@@ -99,7 +99,7 @@ describe.each(moduleVariants)('$label create-listing.js', ({ basePath }) => {
         <button type="submit">Create Auction</button>
       </form>
     `)
-    localStorage.setItem('token', 'session-token')
+    localStorage.setItem('accessToken', 'access-token')
     localStorage.setItem('user', JSON.stringify({ id: 'buyer-2', role: 'BUYER' }))
 
     await importFresh(`${basePath}/create-listing.js`)
@@ -109,7 +109,6 @@ describe.each(moduleVariants)('$label create-listing.js', ({ basePath }) => {
   it('submits a valid auction payload for sellers and redirects to listing detail', async () => {
     setPage('/pages/create-listing.html')
     document.body.insertAdjacentHTML('beforeend', buildFormMarkup())
-    localStorage.setItem('token', 'session-token')
     localStorage.setItem('accessToken', 'access-token')
     localStorage.setItem('user', JSON.stringify({ id: 'seller-1', role: 'SELLER' }))
 
@@ -155,7 +154,6 @@ describe.each(moduleVariants)('$label create-listing.js', ({ basePath }) => {
   it('surfaces category-load failures, validation errors, and submit failures', async () => {
     setPage('/pages/create-listing.html')
     document.body.insertAdjacentHTML('beforeend', buildFormMarkup())
-    localStorage.setItem('token', 'session-token')
     localStorage.setItem('accessToken', 'access-token')
     localStorage.setItem('user', JSON.stringify({ id: 'seller-1', role: 'SELLER' }))
 
