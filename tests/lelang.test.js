@@ -73,4 +73,96 @@ describe.each(moduleVariants)('$label lelang.js', ({ basePath }) => {
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/auctions', expect.objectContaining({ auth: false }))
     expect(window.location.search).toBe('')
   })
+
+  it('retries after load errors and shows fallback error message', async () => {
+    setPage('/pages/lelang.html')
+    document.body.insertAdjacentHTML('beforeend', buildAuctionListMarkup())
+
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new Error(''))
+      .mockResolvedValueOnce(jsonResponse([auction]))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await importFresh(`${basePath}/lelang.js`)
+    await flushPromises()
+
+    expect(document.querySelector('#auctions-error').classList.contains('hidden')).toBe(false)
+    expect(document.querySelector('#auctions-error-message').textContent).toBe('Gagal memuat data lelang.')
+
+    document.querySelector('#auctions-retry').click()
+    await flushPromises()
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(document.querySelector('#auctions-container').textContent).toContain('Phone Auction')
+  })
+
+  it('reloads auction list on filter reset', async () => {
+    setPage('/pages/lelang.html?status=CLOSED')
+    document.body.insertAdjacentHTML('beforeend', buildAuctionListMarkup())
+
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse([auction]))
+      .mockResolvedValueOnce(jsonResponse([auction]))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await importFresh(`${basePath}/lelang.js`)
+    await flushPromises()
+
+    document.querySelector('#auction-filter-form').dispatchEvent(new window.Event('reset', { bubbles: true }))
+    await new Promise((resolve) => window.setTimeout(resolve, 0))
+    await flushPromises()
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/api/auctions?status=CLOSED',
+      expect.objectContaining({ auth: false }),
+    )
+  })
+
+  it('renders fallback values for invalid numbers and dates', async () => {
+    setPage('/pages/lelang.html')
+    document.body.insertAdjacentHTML('beforeend', '<div id="auctions-container"></div>')
+
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse([
+      {
+        id: 'auction-bad-1',
+        title: 'Bad Auction',
+        status: 'UNKNOWN',
+        totalBids: 0,
+        currentPrice: 'not-a-number',
+        nextMinimumBid: 'still-not-a-number',
+        endsAt: 'invalid-date',
+      },
+      {
+        id: 'auction-bad-2',
+        title: 'No End Date',
+        status: 'DRAFT',
+        totalBids: 1,
+        currentPrice: 100,
+        nextMinimumBid: 110,
+        endsAt: '',
+      },
+    ]))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await importFresh(`${basePath}/lelang.js`)
+    await flushPromises()
+
+    expect(document.querySelector('#auctions-container').textContent).toContain('Harga saat ini: -')
+    expect(document.querySelector('#auctions-container').textContent).toContain('Bid minimum: -')
+    expect(document.querySelector('#auctions-container').textContent).toContain('Berakhir: -')
+  })
+
+  it('returns early when auction container is missing', async () => {
+    setPage('/pages/lelang.html')
+    document.body.insertAdjacentHTML('beforeend', buildAuctionListMarkup().replace('<div id="auctions-container"></div>', ''))
+
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    await importFresh(`${basePath}/lelang.js`)
+    await flushPromises()
+
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 })
