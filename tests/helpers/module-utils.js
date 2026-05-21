@@ -5,6 +5,54 @@ export const moduleVariants = [
   { label: 'public', basePath: '../../public/assets/js' },
 ]
 
+const createStorageMock = () => {
+  const store = new Map()
+
+  return {
+    clear() {
+      store.clear()
+    },
+    getItem(key) {
+      return store.has(key) ? store.get(key) : null
+    },
+    key(index) {
+      return Array.from(store.keys())[index] ?? null
+    },
+    removeItem(key) {
+      store.delete(key)
+    },
+    setItem(key, value) {
+      store.set(key, String(value))
+    },
+    get length() {
+      return store.size
+    },
+  }
+}
+
+const ensureLocalStorage = () => {
+  if (typeof globalThis.localStorage?.clear === 'function') {
+    return globalThis.localStorage
+  }
+
+  const storage = createStorageMock()
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    writable: true,
+    value: storage,
+  })
+
+  if (typeof window !== 'undefined') {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      writable: true,
+      value: storage,
+    })
+  }
+
+  return storage
+}
+
 export const importFresh = async (modulePath) => {
   vi.resetModules()
   return import(`${modulePath}?scenario=${Date.now()}-${Math.random()}`)
@@ -12,7 +60,7 @@ export const importFresh = async (modulePath) => {
 
 export const setPage = (pathnameWithSearch = '/pages/listings.html') => {
   document.body.innerHTML = ''
-  localStorage.clear()
+  ensureLocalStorage().clear()
   document.body.innerHTML = '<div id="navbar"></div><div id="footer"></div>'
   window.history.replaceState({}, '', pathnameWithSearch)
   window.__API_URL__ = '/api'

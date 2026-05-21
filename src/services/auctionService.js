@@ -8,7 +8,7 @@ export const fetchAuctionSnapshot = async (auctionId) => {
 
   return {
     ...detail,
-    bidHistory: Array.isArray(history) ? history : [],
+    bidHistory: Array.isArray(history) ? [...history].reverse() : [],
   }
 }
 
