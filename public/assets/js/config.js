@@ -1,5 +1,5 @@
 const configuredGatewayUrl = window.__BIDMART_API_URL__ || ''
-const productionGatewayUrl = configuredGatewayUrl || 'https://<your-gateway-heroku-app>.herokuapp.com/api'
+const productionGatewayUrl = configuredGatewayUrl || 'https://bidmart-gateway-a20-b69debb40c3a.herokuapp.com/api'
 
 const isLocalHost =
   window.location.hostname === 'localhost' ||
