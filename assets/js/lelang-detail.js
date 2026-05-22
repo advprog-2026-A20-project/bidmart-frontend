@@ -100,7 +100,8 @@ const refreshWalletBalance = async () => {
 
 const getRequiredAvailableBalance = (auction, amount, user) => {
   const leadingBid = auction?.leadingBid
-  if (leadingBid?.bidderId && user?.id && leadingBid.bidderId === user.id) {
+  const userId = user?.id || user?.userId
+  if (leadingBid?.bidderId && userId && leadingBid.bidderId === userId) {
     return Math.max(0, amount - Number(leadingBid.amount || 0))
   }
   return amount
@@ -266,6 +267,12 @@ if (bidForm) {
       return
     }
 
+    try {
+      await loadAuctionDetail()
+    } catch {
+      // The existing auction snapshot can still be used; the backend remains authoritative.
+    }
+
     const amount = Number(bidAmountInput?.value || 0)
     const minimum = getMinimumBidAmount(currentAuction)
     let user = getUser()
@@ -324,6 +331,12 @@ if (bidForm) {
     }
   })
 }
+
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    loadAuctionDetail()
+  }
+})
 
 if (activateButton) {
   activateButton.addEventListener('click', async () => {
