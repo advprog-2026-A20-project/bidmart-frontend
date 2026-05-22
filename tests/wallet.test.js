@@ -7,7 +7,6 @@ import {
 } from './helpers/module-utils.js'
 
 const walletVariants = [
-  { label: 'assets', basePath: '../../assets/js' },
   { label: 'public', basePath: '../../public/assets/js' },
 ]
 

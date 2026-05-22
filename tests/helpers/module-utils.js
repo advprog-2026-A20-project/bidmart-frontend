@@ -1,7 +1,6 @@
 import { vi } from 'vitest'
 
 export const moduleVariants = [
-  { label: 'assets', basePath: '../../assets/js' },
   { label: 'public', basePath: '../../public/assets/js' },
 ]
 

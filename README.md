@@ -5,14 +5,11 @@ Repository ini berisi frontend BidMart yang dipisahkan dari repository monolith.
 ## Framework
 
 - Vite
-- React
-- React Router
-- Axios
 - Vitest
 
 Boundary frontend diringkas di `docs/service-boundary.md`.
 
-Masih ada halaman static legacy di `pages/`, `assets/js/`, dan `public/` untuk kompatibilitas alur lama.
+Frontend ini memakai halaman HTML dan JavaScript statis yang diserve dari folder `public/`. Halaman berada di `public/pages/`, sedangkan module JavaScript berada di `public/assets/js/`.
 
 ## Install Dependency
 
