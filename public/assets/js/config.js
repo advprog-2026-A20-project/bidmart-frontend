@@ -1,5 +1,5 @@
-const productionGatewayUrl =
-  'https://identical-daffy-backendtugasadprokelompoka20-0d961edc.koyeb.app/api'
+const configuredGatewayUrl = window.__BIDMART_API_URL__ || ''
+const productionGatewayUrl = configuredGatewayUrl || 'https://<your-gateway-heroku-app>.herokuapp.com/api'
 
 const isLocalHost =
   window.location.hostname === 'localhost' ||

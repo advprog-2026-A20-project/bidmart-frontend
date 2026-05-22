@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/write-runtime-config.mjs",
     "build": "vite build",
     "test": "vitest run --coverage",
     "preview": "vite preview",

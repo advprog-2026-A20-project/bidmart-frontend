@@ -66,8 +66,10 @@ VITE_API_BASE_URL=http://localhost:8080/api
 Untuk Vercel, set environment variable berikut:
 
 ```text
-VITE_API_BASE_URL=https://identical-daffy-backendtugasadprokelompoka20-0d961edc.koyeb.app/api
+VITE_API_BASE_URL=https://<your-gateway-heroku-app>.herokuapp.com/api
 ```
+
+Saat `npm run build`, nilai `VITE_API_BASE_URL` ditulis ke `public/runtime-config.js` dan ikut masuk ke `dist/runtime-config.js`. File ini sengaja diberi cache policy `no-store` pada `vercel.json` agar perubahan gateway URL cepat terbaca.
 
 ## Mapping Fitur ke Endpoint Gateway
 
@@ -91,6 +93,6 @@ VITE_API_BASE_URL=https://identical-daffy-backendtugasadprokelompoka20-0d961edc.
 
 ## Endpoint yang Perlu Dicek Ulang
 
-- Static legacy pages masih memakai `window.__API_URL__`; defaultnya gateway lokal pada `localhost` dan gateway Koyeb pada hostname production.
+- Static pages memakai `window.__API_URL__`; default lokal adalah gateway `localhost`, sedangkan production harus diisi lewat `VITE_API_BASE_URL`.
 - Wallet endpoint saat ini masih memakai `/api/wallet/*`, sementara target routing gateway jangka panjang menyebut `/api/wallets/**`.
 - Bid command saat ini masih lewat `/api/auctions/{auctionId}/bids`; target service masa depan dapat memindahkannya ke `/api/bids/**`.
