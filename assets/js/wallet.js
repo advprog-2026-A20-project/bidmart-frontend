@@ -54,10 +54,12 @@ const syncStoredUserFromWallet = (walletData) => {
   if (!currentUser || !walletData) {
     return
   }
+  const availableBalance = walletData.availableBalance ?? walletData.balance ?? currentUser.availableBalance ?? 0
 
   setUser({
     ...currentUser,
-    availableBalance: walletData.availableBalance ?? walletData.balance ?? currentUser.availableBalance ?? 0,
+    balance: availableBalance,
+    availableBalance,
     heldBalance: walletData.heldBalance ?? currentUser.heldBalance ?? 0,
   })
 }
@@ -69,7 +71,7 @@ const loadWallet = async () => {
     const transactions = await request('/wallet/transactions', { auth: true })
     syncStoredUserFromWallet(balanceData)
 
-    const balance = balanceData.balance || 0
+    const balance = balanceData.availableBalance ?? balanceData.balance ?? 0
     balanceEl.textContent = formatCurrency(balance)
     summaryBalanceEl.textContent = formatCurrency(balance)
     summaryCountEl.textContent = transactions.length
