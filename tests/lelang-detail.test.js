@@ -94,7 +94,11 @@ describe.each(moduleVariants)('$label lelang-detail.js', ({ basePath }) => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResponse(initialAuction))
       .mockResolvedValueOnce(jsonResponse(initialHistory))
+      .mockResolvedValueOnce(jsonResponse(initialAuction))
+      .mockResolvedValueOnce(jsonResponse(initialHistory))
+      .mockResolvedValueOnce(jsonResponse({ balance: 500, availableBalance: 500, heldBalance: 0 }))
       .mockResolvedValueOnce(jsonResponse({}))
+      .mockResolvedValueOnce(jsonResponse({ balance: 350, availableBalance: 350, heldBalance: 150 }))
       .mockResolvedValueOnce(jsonResponse(updatedAuction))
       .mockResolvedValueOnce(jsonResponse(updatedHistory))
       .mockResolvedValueOnce(jsonResponse(updatedAuction))
@@ -123,24 +127,21 @@ describe.each(moduleVariants)('$label lelang-detail.js', ({ basePath }) => {
     form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }))
     expect(document.querySelector('#bid-error').textContent).toContain('Bid minimal')
 
-    bidInput.value = '600'
-    form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }))
-    expect(document.querySelector('#bid-error').textContent).toBe('Saldo tidak cukup untuk mengajukan bid.')
-
     bidInput.value = '150'
     form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }))
-    await flushPromises()
 
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
-      '/api/auctions/auction-2/bids',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({ amount: 150 }),
-        headers: expect.any(Headers),
-      }),
-    )
-    expect(fetchMock.mock.calls[2][1].headers.get('Authorization')).toBe('Bearer access-token')
+    await vi.waitFor(() => {
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        6,
+        '/api/auctions/auction-2/bids',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ amount: 150 }),
+          headers: expect.any(Headers),
+        }),
+      )
+    })
+    expect(fetchMock.mock.calls[5][1].headers.get('Authorization')).toBe('Bearer access-token')
     await vi.waitFor(() => {
       expect(document.querySelector('#auction-current-price').textContent).toContain('150')
       expect(document.querySelector('#bid-amount').value).toBe('160')
@@ -150,7 +151,64 @@ describe.each(moduleVariants)('$label lelang-detail.js', ({ basePath }) => {
     document.querySelector('#refresh-detail').click()
     await flushPromises()
 
-    expect(fetchMock).toHaveBeenCalledTimes(7)
+    expect(fetchMock).toHaveBeenCalledTimes(11)
+  })
+
+  it('does not block bidding when the local wallet snapshot appears stale or insufficient', async () => {
+    setPage('/pages/lelang-detail.html?id=auction-self-outbid')
+    document.body.insertAdjacentHTML('beforeend', buildAuctionDetailMarkup())
+    localStorage.setItem('user', JSON.stringify({ id: 'buyer-1', role: 'BUYER', availableBalance: 0, heldBalance: 1000 }))
+    localStorage.setItem('accessToken', 'buyer-token')
+
+    const auction = {
+      id: 'auction-self-outbid',
+      title: 'Self outbid',
+      description: 'Existing leader can bid the difference',
+      status: 'ACTIVE',
+      currentPrice: 1000,
+      nextMinimumBid: 1500,
+      minimumBidIncrement: 500,
+      leadingBid: { bidderId: 'buyer-1', amount: 1000 },
+      endsAt: '2026-04-21T10:00:00Z',
+    }
+
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(auction))
+      .mockResolvedValueOnce(jsonResponse([{ bidderId: 'buyer-1', amount: 1000, sequenceNumber: 1 }]))
+      .mockResolvedValueOnce(jsonResponse(auction))
+      .mockResolvedValueOnce(jsonResponse([{ bidderId: 'buyer-1', amount: 1000, sequenceNumber: 1 }]))
+      .mockResolvedValueOnce(jsonResponse({ balance: 0, availableBalance: 0, heldBalance: 1000 }))
+      .mockResolvedValueOnce(jsonResponse({}))
+      .mockResolvedValueOnce(jsonResponse({ balance: 0, availableBalance: 0, heldBalance: 1500 }))
+      .mockResolvedValueOnce(jsonResponse({
+        ...auction,
+        currentPrice: 1500,
+        nextMinimumBid: 2000,
+        leadingBid: { bidderId: 'buyer-1', amount: 1500 },
+      }))
+      .mockResolvedValueOnce(jsonResponse([{ bidderId: 'buyer-1', amount: 1500, sequenceNumber: 2 }]))
+
+    vi.stubGlobal('fetch', fetchMock)
+
+    await importFresh(`${basePath}/lelang-detail.js`)
+    await flushPromises()
+
+    document.querySelector('#bid-amount').value = '1500'
+    document.querySelector('#bid-form').dispatchEvent(
+      new window.Event('submit', { bubbles: true, cancelable: true }),
+    )
+
+    await vi.waitFor(() => {
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        6,
+        '/api/auctions/auction-self-outbid/bids',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ amount: 1500 }),
+        }),
+      )
+      expect(document.querySelector('#bid-error').textContent).not.toBe('Saldo tidak cukup untuk mengajukan bid.')
+    })
   })
 
   it('applies bid constraints for closed auctions and non-buyer users', async () => {
@@ -330,7 +388,6 @@ describe.each(moduleVariants)('$label lelang-detail.js', ({ basePath }) => {
         endsAt: '2026-04-21T10:00:00Z',
       }))
       .mockResolvedValueOnce(jsonResponse([]))
-      .mockResolvedValueOnce(jsonFailureResponse({ message: 'Bid must be at least 150.00' }, 409))
       .mockResolvedValueOnce(jsonResponse({
         id: 'auction-4',
         title: 'Console',
@@ -343,6 +400,33 @@ describe.each(moduleVariants)('$label lelang-detail.js', ({ basePath }) => {
         endsAt: '2026-04-21T10:00:00Z',
       }))
       .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse({ balance: 500, availableBalance: 500, heldBalance: 0 }))
+      .mockResolvedValueOnce(jsonFailureResponse({ message: 'Bid must be at least 160.00' }, 409))
+      .mockResolvedValueOnce(jsonResponse({
+        id: 'auction-4',
+        title: 'Console',
+        description: 'Current auction',
+        status: 'ACTIVE',
+        currentPrice: 150,
+        nextMinimumBid: 160,
+        minimumBidIncrement: 10,
+        leadingBid: { amount: 150 },
+        endsAt: '2026-04-21T10:00:00Z',
+      }))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse({
+        id: 'auction-4',
+        title: 'Console',
+        description: 'Current auction',
+        status: 'ACTIVE',
+        currentPrice: 140,
+        nextMinimumBid: null,
+        minimumBidIncrement: 10,
+        leadingBid: { amount: 140 },
+        endsAt: '2026-04-21T10:00:00Z',
+      }))
+      .mockResolvedValueOnce(jsonResponse([]))
+      .mockResolvedValueOnce(jsonResponse({ balance: 500, availableBalance: 500, heldBalance: 0 }))
       .mockResolvedValueOnce(jsonFailureResponse({ message: 'Server error' }, 500))
 
     vi.stubGlobal('fetch', fetchMock)
@@ -353,21 +437,23 @@ describe.each(moduleVariants)('$label lelang-detail.js', ({ basePath }) => {
     const form = document.querySelector('#bid-form')
     const bidInput = document.querySelector('#bid-amount')
 
-    bidInput.value = '110'
+    bidInput.value = '150'
     form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }))
     await flushPromises()
 
     await vi.waitFor(() => {
       expect(document.querySelector('#bid-error').textContent).toContain('Bid minimum terbaru sudah dimuat ulang')
-      expect(document.querySelector('#bid-amount').value).toBe('150')
+      expect(document.querySelector('#bid-amount').value).toBe('160')
     })
 
-    bidInput.value = '150'
+    bidInput.value = '160'
     form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }))
     await flushPromises()
 
-    expect(document.querySelector('#bid-error').textContent).toBe('Server error')
-    expect(document.querySelector('#bid-submit').textContent).toBe('Ajukan Penawaran')
+    await vi.waitFor(() => {
+      expect(document.querySelector('#bid-error').textContent).toBe('Server error')
+      expect(document.querySelector('#bid-submit').textContent).toBe('Ajukan Penawaran')
+    })
   })
 
   it('handles fallback minimum bid calculations and missing optional nodes', async () => {

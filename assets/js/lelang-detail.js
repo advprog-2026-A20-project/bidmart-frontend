@@ -297,14 +297,7 @@ if (bidForm) {
       return
     }
 
-    try {
-      await loadAuctionDetail()
-    } catch {
-      // The existing auction snapshot can still be used; the backend remains authoritative.
-    }
-
     const amount = Number(bidAmountInput?.value || 0)
-    const minimum = getMinimumBidAmount(currentAuction)
     let user = getUser()
 
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -312,8 +305,21 @@ if (bidForm) {
       return
     }
 
-    if (amount < minimum) {
-      bidError.textContent = `Bid minimal ${formatPrice(minimum)}.`
+    const snapshotMinimum = getMinimumBidAmount(currentAuction)
+    if (amount < snapshotMinimum) {
+      bidError.textContent = `Bid minimal ${formatPrice(snapshotMinimum)}.`
+      return
+    }
+
+    try {
+      await loadAuctionDetail()
+    } catch {
+      // The existing auction snapshot can still be used; the backend remains authoritative.
+    }
+
+    const refreshedMinimum = getMinimumBidAmount(currentAuction)
+    if (amount < refreshedMinimum) {
+      bidError.textContent = `Bid minimal ${formatPrice(refreshedMinimum)}.`
       return
     }
 

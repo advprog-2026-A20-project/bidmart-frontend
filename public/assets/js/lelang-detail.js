@@ -1,4 +1,4 @@
-import { getUser, request } from './api.js'
+import { getUser, request, setUser } from './api.js'
 
 const params = new URLSearchParams(window.location.search)
 const auctionId = params.get('id')
@@ -66,6 +66,7 @@ const setBidEnabled = (enabled) => {
 }
 
 const getMinimumBidAmount = (auction) => {
+  const leadingBid = getLeadingBid(auction)
   const nextMinimumBid = Number(auction?.nextMinimumBid)
   if (Number.isFinite(nextMinimumBid) && nextMinimumBid > 0) {
     return nextMinimumBid
@@ -73,7 +74,7 @@ const getMinimumBidAmount = (auction) => {
 
   const currentPrice = Number(auction?.currentPrice)
   const minimumBidIncrement = Number(auction?.minimumBidIncrement)
-  if (auction?.leadingBid && Number.isFinite(currentPrice) && Number.isFinite(minimumBidIncrement)) {
+  if (leadingBid && Number.isFinite(currentPrice) && Number.isFinite(minimumBidIncrement)) {
     return currentPrice + minimumBidIncrement
   }
 
@@ -83,6 +84,52 @@ const getMinimumBidAmount = (auction) => {
   }
 
   return Number.isFinite(currentPrice) ? currentPrice : 0
+}
+
+const refreshWalletBalance = async () => {
+  const wallet = await request('/wallet/balance', { auth: true })
+  const currentUser = getUser()
+  if (currentUser) {
+    const availableBalance = wallet.availableBalance ?? wallet.balance ?? currentUser.availableBalance ?? 0
+    setUser({
+      ...currentUser,
+      balance: availableBalance,
+      availableBalance,
+      heldBalance: wallet.heldBalance ?? currentUser.heldBalance ?? 0,
+    })
+  }
+  return wallet
+}
+
+const getLeadingBid = (auction) => {
+  if (auction?.leadingBid) {
+    return auction.leadingBid
+  }
+
+  const bids = Array.isArray(auction?.bidHistory) && auction.bidHistory.length > 0
+    ? auction.bidHistory
+    : currentBidHistory
+
+  if (!Array.isArray(bids) || bids.length === 0) {
+    return null
+  }
+
+  return [...bids].sort((leftBid, rightBid) => {
+    const amountDifference = Number(rightBid?.amount || 0) - Number(leftBid?.amount || 0)
+    if (amountDifference !== 0) {
+      return amountDifference
+    }
+    return Number(leftBid?.sequenceNumber || 0) - Number(rightBid?.sequenceNumber || 0)
+  })[0]
+}
+
+const getRequiredAvailableBalance = (auction, amount, user) => {
+  const leadingBid = getLeadingBid(auction)
+  const userId = user?.id || user?.userId
+  if (leadingBid?.bidderId && userId && leadingBid.bidderId === userId) {
+    return Math.max(0, amount - Number(leadingBid.amount || 0))
+  }
+  return amount
 }
 
 const syncBidInput = (auction) => {
@@ -192,6 +239,7 @@ const syncActivationAction = (auction) => {
 }
 
 let currentAuction = null
+let currentBidHistory = []
 
 const loadAuctionDetail = async () => {
   if (!auctionId) {
@@ -211,7 +259,11 @@ const loadAuctionDetail = async () => {
       request(`/auctions/${auctionId}`, { auth: false }),
       request(`/auctions/${auctionId}/bids`, { auth: false }),
     ])
-    currentAuction = auction
+    currentBidHistory = Array.isArray(history) ? history : []
+    currentAuction = {
+      ...auction,
+      bidHistory: Array.isArray(auction?.bidHistory) ? auction.bidHistory : currentBidHistory,
+    }
 
     titleEl.textContent = auction?.title || 'Lelang'
     descriptionEl.textContent = auction?.description || ''
@@ -221,9 +273,9 @@ const loadAuctionDetail = async () => {
     endsAtEl.textContent = formatDate(auction?.endsAt)
     syncBidInput(auction)
 
-    renderHistory(Array.isArray(history) ? history : [])
-    applyBidConstraint(auction)
-    syncActivationAction(auction)
+    renderHistory(currentBidHistory)
+    applyBidConstraint(currentAuction)
+    syncActivationAction(currentAuction)
   } catch (error) {
     detailErrorBox?.classList.remove('hidden')
     if (detailErrorMessage) {
@@ -246,22 +298,44 @@ if (bidForm) {
     }
 
     const amount = Number(bidAmountInput?.value || 0)
-    const minimum = getMinimumBidAmount(currentAuction)
-    const user = getUser()
+    let user = getUser()
 
     if (!Number.isFinite(amount) || amount <= 0) {
       bidError.textContent = 'Nominal bid tidak valid.'
       return
     }
 
-    if (amount < minimum) {
-      bidError.textContent = `Bid minimal ${formatPrice(minimum)}.`
+    const snapshotMinimum = getMinimumBidAmount(currentAuction)
+    if (amount < snapshotMinimum) {
+      bidError.textContent = `Bid minimal ${formatPrice(snapshotMinimum)}.`
       return
     }
 
-    if (Number(user?.availableBalance || 0) < amount) {
-      bidError.textContent = 'Saldo tidak cukup untuk mengajukan bid.'
+    try {
+      await loadAuctionDetail()
+    } catch {
+      // The existing auction snapshot can still be used; the backend remains authoritative.
+    }
+
+    const refreshedMinimum = getMinimumBidAmount(currentAuction)
+    if (amount < refreshedMinimum) {
+      bidError.textContent = `Bid minimal ${formatPrice(refreshedMinimum)}.`
       return
+    }
+
+    try {
+      const wallet = await refreshWalletBalance()
+      user = getUser() || user
+      const requiredAvailableBalance = getRequiredAvailableBalance(currentAuction, amount, user)
+      const availableBalance = Number(wallet?.availableBalance ?? wallet?.balance ?? 0)
+      if (availableBalance < requiredAvailableBalance) {
+        console.info('Wallet balance appears insufficient locally; submitting anyway so backend can decide.', {
+          availableBalance,
+          requiredAvailableBalance,
+        })
+      }
+    } catch {
+      // Keep the backend as the source of truth when the balance refresh fails.
     }
 
     setBidEnabled(false)
@@ -274,6 +348,7 @@ if (bidForm) {
         body: JSON.stringify({ amount }),
       })
       bidSuccess.textContent = 'Bid berhasil diajukan.'
+      await refreshWalletBalance()
       await loadAuctionDetail()
     } catch (error) {
       const message = error.message || 'Gagal mengajukan bid.'
@@ -295,6 +370,12 @@ if (bidForm) {
     }
   })
 }
+
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    loadAuctionDetail()
+  }
+})
 
 if (activateButton) {
   activateButton.addEventListener('click', async () => {

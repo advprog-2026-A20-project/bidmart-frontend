@@ -8,6 +8,7 @@ import {
 
 const walletVariants = [
   { label: 'assets', basePath: '../../assets/js' },
+  { label: 'public', basePath: '../../public/assets/js' },
 ]
 
 const buildWalletMarkup = () => `
