@@ -1,4 +1,4 @@
-import { getUser, request } from './api.js'
+import { getUser, request, setUser } from './api.js'
 
 const params = new URLSearchParams(window.location.search)
 const auctionId = params.get('id')
@@ -83,6 +83,27 @@ const getMinimumBidAmount = (auction) => {
   }
 
   return Number.isFinite(currentPrice) ? currentPrice : 0
+}
+
+const refreshWalletBalance = async () => {
+  const wallet = await request('/wallet/balance', { auth: true })
+  const currentUser = getUser()
+  if (currentUser) {
+    setUser({
+      ...currentUser,
+      availableBalance: wallet.availableBalance ?? wallet.balance ?? currentUser.availableBalance ?? 0,
+      heldBalance: wallet.heldBalance ?? currentUser.heldBalance ?? 0,
+    })
+  }
+  return wallet
+}
+
+const getRequiredAvailableBalance = (auction, amount, user) => {
+  const leadingBid = auction?.leadingBid
+  if (leadingBid?.bidderId && user?.id && leadingBid.bidderId === user.id) {
+    return Math.max(0, amount - Number(leadingBid.amount || 0))
+  }
+  return amount
 }
 
 const syncBidInput = (auction) => {
@@ -247,7 +268,7 @@ if (bidForm) {
 
     const amount = Number(bidAmountInput?.value || 0)
     const minimum = getMinimumBidAmount(currentAuction)
-    const user = getUser()
+    let user = getUser()
 
     if (!Number.isFinite(amount) || amount <= 0) {
       bidError.textContent = 'Nominal bid tidak valid.'
@@ -259,9 +280,17 @@ if (bidForm) {
       return
     }
 
-    if (Number(user?.availableBalance || 0) < amount) {
-      bidError.textContent = 'Saldo tidak cukup untuk mengajukan bid.'
-      return
+    try {
+      const wallet = await refreshWalletBalance()
+      user = getUser() || user
+      const requiredAvailableBalance = getRequiredAvailableBalance(currentAuction, amount, user)
+      const availableBalance = Number(wallet?.availableBalance ?? wallet?.balance ?? 0)
+      if (availableBalance < requiredAvailableBalance) {
+        bidError.textContent = 'Saldo tidak cukup untuk mengajukan bid.'
+        return
+      }
+    } catch {
+      // Keep the backend as the source of truth when the balance refresh fails.
     }
 
     setBidEnabled(false)
